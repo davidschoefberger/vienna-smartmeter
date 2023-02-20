@@ -14,8 +14,7 @@ logger = logging.getLogger(__name__)
 class Smartmeter:
     """Smartmeter client."""
 
-    API_URL_WSTW = "https://api.wstw.at/gateway/WN_SMART_METER_PORTAL_API_B2C/1.0/"
-    API_URL_WN = "https://service.wienernetze.at/rest/smp/1.0/"
+    API_URL = "https://api.wstw.at/gateway/WN_SMART_METER_PORTAL_API_B2C/1.0/"
     API_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
     AUTH_URL = "https://log.wien/auth/realms/logwien/protocol/openid-connect/"  # noqa
 
@@ -89,7 +88,7 @@ class Smartmeter:
         return_response=False,
     ):
         if base_url is None:
-            base_url = self.API_URL_WSTW
+            base_url = self.API_URL
         url = "{0}{1}".format(base_url, endpoint)
 
         if query:
@@ -100,39 +99,6 @@ class Smartmeter:
         headers = {
             "Authorization": f"Bearer {self._access_token}",
             "X-Gateway-APIKey": "afb0be74-6455-44f5-a34d-6994223020ba",
-        }
-
-        if data:
-            logger.debug("DATA: {}", data)
-            headers["Content-Type"] = "application/json"
-
-        response = self.session.request(method, url, headers=headers, json=data)
-
-        if return_response:
-            return response
-
-        return response.json()
-
-    def _call_api_wn(
-        self,
-        endpoint,
-        base_url=None,
-        method="GET",
-        data=None,
-        query=None,
-        return_response=False,
-    ):
-        if base_url is None:
-            base_url = self.API_URL_WN
-        url = "{0}{1}".format(base_url, endpoint)
-
-        if query:
-            url += ("?" if "?" not in endpoint else "&") + parse.urlencode(query)
-
-        logger.debug("REQUEST: {}", url)
-
-        headers = {
-            "Authorization": f"Bearer {self._access_token}",
         }
 
         if data:
@@ -226,7 +192,7 @@ class Smartmeter:
         Returns:
             dict: JSON response of api call to 'w/user/profile'
         """
-        return self._call_api_wn("w/user/profile")
+        return self._call_api("w/user/profile")
 
     def ereignisse(self, date_from, date_to=None, zaehlpunkt=None):
         """Returns events between date_from and date_to of a specific smart meter.
@@ -250,7 +216,7 @@ class Smartmeter:
             "dateFrom": self._dt_string(date_from),
             "dateUntil": self._dt_string(date_to),
         }
-        return self._call_api_wn("w/user/ereignisse", query=query)
+        return self._call_api("w/user/ereignisse", query=query)
 
     def create_ereignis(self, zaehlpunkt, name, date_from, date_to=None):
         """Creates new event.
@@ -280,8 +246,8 @@ class Smartmeter:
             "zaehlpunkt": zaehlpunkt,
         }
 
-        return self._call_api_wn("w/user/ereignis", data=data, method="POST")
+        return self._call_api("w/user/ereignis", data=data, method="POST")
 
     def delete_ereignis(self, ereignis_id):
         """Deletes ereignis."""
-        return self._call_api_wn("w/user/ereignis/{}".format(ereignis_id), method="DELETE")
+        return self._call_api("w/user/ereignis/{}".format(ereignis_id), method="DELETE")
